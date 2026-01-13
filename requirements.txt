@@ -1,0 +1,25 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+
+# Data Processing
+pandas
+openpyxl
+
+# Environment & Config
+python-dotenv
+
+# Templates & Forms
+jinja2
+python-multipart
+
+# HTTP Requests (for AI API)
+requests
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Schema Drift Detector</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'></path></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --secondary: #a855f7;
+            --bg: #030712;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.1);
+            --error: #f87171;
+            --success: #34d399;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-main);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-y: auto;
+            padding: 2rem 0;
+            position: relative;
+        }
+
+        /* Animated Background Elements */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.5;
+            animation: move 20s infinite alternate;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes move {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(50px, 100px);
+            }
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            padding: 2.5rem 2.5rem 2rem;
+            border-radius: 1.5rem;
+            width: 95%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border);
+            position: relative;
+            z-index: 10;
+            animation: fadeIn 0.8s ease-out;
+            margin: auto;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+
+        .logo-box {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 0.8rem;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px var(--primary-glow);
+        }
+
+        .logo-box svg {
+            width: 26px;
+            height: 26px;
+            color: white;
+        }
+
+        .login-card h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #fff, #9ca3af);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            position: relative;
+            animation: fadeIn 0.6s ease-out both;
+        }
+
+        .form-group:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .form-group:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .form-group:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .form-group:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: color 0.2s;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem 1.1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 0.8rem;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .form-group input:focus+label {
+            color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 0.8rem;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+            box-shadow: 0 10px 15px -3px var(--primary-glow);
+            animation: fadeIn 0.6s ease-out 0.5s both;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px var(--primary-glow);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .toggle-auth {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-auth a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            margin-left: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .toggle-auth a:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        #message {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            display: none;
+            text-align: center;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-error {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--error);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+
+        .message-success {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        /* SVG Patterns */
+        .bg-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="bg-pattern"></div>
+
+    <div class="login-card">
+        <div class="header-section">
+            <div class="logo-box">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                    </path>
+                </svg>
+            </div>
+            <h1 id="auth-title">Welcome</h1>
+            <p id="auth-desc">Secure access to Schema Drift Detector</p>
+        </div>
+
+        <form id="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter username" required>
+            </div>
+            <div class="form-group" id="email-group" style="display: none;">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="example@domain.com">
+            </div>
+            <div class="form-group">
+                <label for="password" id="password-label">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <div class="form-group" id="confirm-password-group" style="display: none;">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn" id="submit-btn">Login to Account</button>
+        </form>
+
+        <!-- Forgot Password Form -->
+        <form id="forgot-password-form" style="display: none;">
+            <div class="form-group">
+                <label for="reset-email">Email Address</label>
+                <input type="email" id="reset-email" placeholder="Enter your registered email" required>
+            </div>
+            <button type="submit" class="btn" id="forgot-btn">Send Reset Token</button>
+        </form>
+
+        <!-- Reset Password Form -->
+        <form id="reset-password-form" style="display: none;">
+            <div class="form-group">
+                <label for="reset-token">Reset Token</label>
+                <input type="text" id="reset-token" placeholder="Paste your token from email" required>
+            </div>
+            <div class="form-group">
+                <label for="new-password">New Password</label>
+                <input type="password" id="new-password" placeholder="••••••••" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm-new-password">Confirm New Password</label>
+                <input type="password" id="confirm-new-password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn" id="reset-btn">Reset Password</button>
+        </form>
+
+        <!-- Email Verification Form -->
+        <form id="verify-email-form" style="display: none;">
+            <div class="form-group">
+                <label for="verification-code">Verification Code</label>
+                <input type="text" id="verification-code" placeholder="Enter 6-digit code from email" required
+                    maxlength="6" pattern="[0-9]{6}">
+            </div>
+            <button type="submit" class="btn" id="verify-btn">Verify Email</button>
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="#" id="resend-verification-link"
+                    style="color: var(--text-muted); font-size: 0.85rem; text-decoration: none;">Didn't receive code?
+                    Resend</a>
+            </div>
+        </form>
+
+        <div id="message"></div>
+        <div id="password-requirements"
+            style="display: none; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; text-align: left; padding: 0 0.5rem;">
+            * Min 8 chars: 1 uppercase, 1 lowercase, 1 number
+        </div>
+
+        <!-- Forgot Password Link -->
+        <div class="forgot-password" id="forgot-link-container" style="text-align: center; margin-top: 1rem;">
+            <a href="#" id="forgot-link"
+                style="color: var(--text-muted); font-size: 0.85rem; text-decoration: none; transition: color 0.2s;">Forgot
+                your password?</a>
+        </div>
+
+        <div class="toggle-auth">
+            <span id="toggle-text">New here?</span>
+            <a href="#" id="toggle-link">Create an account</a>
+        </div>
+    </div>
+
+    <script>
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authDesc = document.getElementById('auth-desc');
+        const submitBtn = document.getElementById('submit-btn');
+        const toggleLink = document.getElementById('toggle-link');
+        const toggleText = document.getElementById('toggle-text');
+        const messageDiv = document.getElementById('message');
+        const emailGroup = document.getElementById('email-group');
+        const emailInput = document.getElementById('email');
+        const confirmPwGroup = document.getElementById('confirm-password-group');
+        const confirmPwInput = document.getElementById('confirm_password');
+        const passwordLabel = document.getElementById('password-label');
+
+        let isLogin = true;
+
+        // Old toggle handler removed - now using unified switchView() function below
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const email = emailInput.value;
+            const confirm_password = confirmPwInput.value;
+
+            if (!isLogin && password.length < 6) {
+                showMessage("Password must be at least 6 characters", "error");
+                return;
+            }
+
+            if (!isLogin && password !== confirm_password) {
+                showMessage("Passwords do not match", "error");
+                return;
+            }
+
+            const endpoint = isLogin ? '/token' : '/register';
+
+            let body;
+            let headers = {};
+
+            if (isLogin) {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                body = formData;
+            } else {
+                headers['Content-Type'] = 'application/json';
+                body = JSON.stringify({ username, email, password, confirm_password });
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerText = isLogin ? "Verifying..." : "Creating...";
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: body
+                });
+
+                let data;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await response.json();
+                }
+
+                if (response.ok) {
+                    if (isLogin) {
+                        localStorage.setItem('access_token', data.access_token);
+                        showMessage("Login successful! Redirecting...", "success");
+                        setTimeout(() => window.location.href = '/', 1000);
+                    } else {
+                        // Registration successful - show verification view
+                        pendingVerificationEmail = emailInput.value;
+                        showMessage("Registration successful! Check your email for verification code.", "success");
+                        setTimeout(() => {
+                            switchView('verify');
+                        }, 1500);
+                    }
+                } else if (response.status === 403) {
+                    // User exists but not verified
+                    showMessage(data.detail || "Please verify your email first.", "error");
+                    setTimeout(() => {
+                        switchView('verify');
+                    }, 1500);
+                } else {
+                    const errorMsg = (data && data.detail) ? data.detail : "Server error (Status " + response.status + ")";
+                    showMessage(errorMsg, "error");
+                }
+            } catch (err) {
+                console.error(err);
+                showMessage("Connection error. Please check if the server is running.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = isLogin ? "Login to Account" : "Register Account";
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageDiv.innerText = msg;
+            messageDiv.className = type === 'success' ? 'message-success' : 'message-error';
+            messageDiv.style.display = 'block';
+        }
+
+        // =================================================
+        // FORGOT PASSWORD FUNCTIONALITY
+        // =================================================
+        const forgotLink = document.getElementById('forgot-link');
+        const forgotLinkContainer = document.getElementById('forgot-link-container');
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+        const resetPasswordForm = document.getElementById('reset-password-form');
+        const verifyEmailForm = document.getElementById('verify-email-form');
+
+        let currentView = 'login'; // 'login', 'register', 'forgot', 'reset', 'verify'
+        let pendingVerificationEmail = ''; // Store email for resend
+
+        function switchView(view) {
+            currentView = view;
+            authForm.style.display = 'none';
+            forgotPasswordForm.style.display = 'none';
+            resetPasswordForm.style.display = 'none';
+            verifyEmailForm.style.display = 'none';
+            messageDiv.style.display = 'none';
+            document.getElementById('password-requirements').style.display = 'none';
+
+            // Re-trigger animation on view switch
+            const loginCard = document.querySelector('.login-card');
+            loginCard.style.animation = 'none';
+            loginCard.offsetHeight; // Trigger reflow
+            loginCard.style.animation = 'fadeIn 0.5s ease-out';
+
+            switch (view) {
+                case 'login':
+                    authForm.style.display = 'block';
+                    authTitle.innerText = 'Welcome Back';
+                    authDesc.innerText = 'Secure access to Schema Drift Detector';
+                    submitBtn.innerText = 'Login to Account';
+                    toggleText.innerText = 'New here?';
+                    toggleLink.innerText = 'Create an account';
+                    emailGroup.style.display = 'none';
+                    confirmPwGroup.style.display = 'none';
+                    emailInput.required = false;
+                    confirmPwInput.required = false;
+                    forgotLinkContainer.style.display = 'block';
+                    isLogin = true;
+                    break;
+                case 'register':
+                    authForm.style.display = 'block';
+                    authTitle.innerText = 'Join the Platform';
+                    authDesc.innerText = 'Start monitoring your database drift today';
+                    submitBtn.innerText = 'Register Account';
+                    toggleText.innerText = 'Already a member?';
+                    toggleLink.innerText = 'Sign in instead';
+                    emailGroup.style.display = 'block';
+                    confirmPwGroup.style.display = 'block';
+                    document.getElementById('password-requirements').style.display = 'block';
+                    emailInput.required = true;
+                    confirmPwInput.required = true;
+                    passwordLabel.innerText = 'Set Password';
+                    forgotLinkContainer.style.display = 'none';
+                    isLogin = false;
+                    break;
+                case 'forgot':
+                    forgotPasswordForm.style.display = 'block';
+                    authTitle.innerText = 'Reset Password';
+                    authDesc.innerText = 'Enter your email to receive a reset token';
+                    toggleText.innerText = 'Remember your password?';
+                    toggleLink.innerText = 'Back to login';
+                    forgotLinkContainer.style.display = 'none';
+                    break;
+                case 'reset':
+                    resetPasswordForm.style.display = 'block';
+                    authTitle.innerText = 'Set New Password';
+                    authDesc.innerText = 'Enter your reset token and new password';
+                    toggleText.innerText = 'Got a new token?';
+                    toggleLink.innerText = 'Back to email step';
+                    document.getElementById('password-requirements').style.display = 'block';
+                    forgotLinkContainer.style.display = 'none';
+                    break;
+                case 'verify':
+                    verifyEmailForm.style.display = 'block';
+                    authTitle.innerText = 'Verify Your Email';
+                    authDesc.innerText = 'Check your inbox for a 6-digit verification code';
+                    toggleText.innerText = 'Already verified?';
+                    toggleLink.innerText = 'Back to login';
+                    forgotLinkContainer.style.display = 'none';
+                    break;
+            }
+        }
+
+        // Forgot password link click
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('forgot');
+        });
+
+        // Update toggle link to handle all views
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentView === 'login') {
+                switchView('register');
+            } else if (currentView === 'register') {
+                switchView('login');
+            } else if (currentView === 'forgot') {
+                switchView('login');
+            } else if (currentView === 'reset') {
+                switchView('forgot');
+            } else if (currentView === 'verify') {
+                switchView('login');
+            }
+        });
+
+        // Forgot password form submit
+        forgotPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('reset-email').value;
+            const forgotBtn = document.getElementById('forgot-btn');
+
+            try {
+                forgotBtn.disabled = true;
+                forgotBtn.innerText = 'Sending...';
+
+                const response = await fetch('/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Check your email for the reset token!', 'success');
+                    setTimeout(() => switchView('reset'), 2000);
+                } else {
+                    showMessage(data.detail || 'Failed to send reset email', 'error');
+                }
+            } catch (err) {
+                showMessage('Connection error. Please try again.', 'error');
+            } finally {
+                forgotBtn.disabled = false;
+                forgotBtn.innerText = 'Send Reset Token';
+            }
+        });
+
+        // Reset password form submit
+        resetPasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = document.getElementById('reset-token').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmNewPassword = document.getElementById('confirm-new-password').value;
+            const resetBtn = document.getElementById('reset-btn');
+
+            if (newPassword.length < 6) {
+                showMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                resetBtn.disabled = true;
+                resetBtn.innerText = 'Resetting...';
+
+                const response = await fetch('/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token,
+                        new_password: newPassword,
+                        confirm_password: confirmNewPassword
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Password reset successful! Redirecting to login...', 'success');
+                    setTimeout(() => switchView('login'), 2000);
+                } else {
+                    showMessage(data.detail || 'Failed to reset password', 'error');
+                }
+            } catch (err) {
+                showMessage('Connection error. Please try again.', 'error');
+            } finally {
+                resetBtn.disabled = false;
+                resetBtn.innerText = 'Reset Password';
+            }
+        });
+
+        // =================================================
+        // EMAIL VERIFICATION FUNCTIONALITY
+        // =================================================
+        verifyEmailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('verification-code').value;
+            const verifyBtn = document.getElementById('verify-btn');
+
+            try {
+                verifyBtn.disabled = true;
+                verifyBtn.innerText = 'Verifying...';
+
+                const response = await fetch('/verify-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Email verified! You can now login.', 'success');
+                    setTimeout(() => switchView('login'), 2000);
+                } else {
+                    showMessage(data.detail || 'Invalid verification code', 'error');
+                }
+            } catch (err) {
+                showMessage('Connection error. Please try again.', 'error');
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = 'Verify Email';
+            }
+        });
+
+        // Resend verification link
+        document.getElementById('resend-verification-link').addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            if (!pendingVerificationEmail) {
+                showMessage('Please enter your email and try to login first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/resend-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: pendingVerificationEmail })
+                });
+
+                const data = await response.json();
+                showMessage(data.message || 'Verification code sent!', 'success');
+            } catch (err) {
+                showMessage('Failed to resend. Please try again.', 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

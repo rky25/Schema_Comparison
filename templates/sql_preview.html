@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL Preview | Schema Drift Detector</title>
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'></path></svg>">
+  <script>
+    // Auth check - immediately redirect if no token
+    if (!localStorage.getItem('access_token')) {
+      window.location.href = '/login';
+    }
+  </script>
+  <meta name="description" content="AI-Generated SQL migration scripts for database schema synchronization">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-light: #34d399;
+      --primary-glow: rgba(16, 185, 129, 0.4);
+      --accent: #f59e0b;
+      --accent-light: #fbbf24;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --dark: #0f0f10;
+      --dark-secondary: #1a1a1d;
+      --gray-900: #18181b;
+      --gray-800: #27272a;
+      --gray-700: #3f3f46;
+      --gray-600: #52525b;
+      --gray-500: #71717a;
+      --gray-400: #a1a1aa;
+      --gray-300: #d4d4d8;
+      --gray-200: #e4e4e7;
+      --gray-100: #f4f4f5;
+      --white: #ffffff;
+      --gradient-primary: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+      --shadow-glow: 0 0 40px rgba(16, 185, 129, 0.15);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      /* SQL Syntax Colors */
+      --sql-keyword: #c084fc;
+      --sql-function: #60a5fa;
+      --sql-string: #fbbf24;
+      --sql-number: #f472b6;
+      --sql-comment: #6b7280;
+      --sql-table: #34d399;
+      --sql-column: #93c5fd;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--dark);
+      color: var(--gray-100);
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-5px);
+      }
+    }
+
+    @keyframes glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% center;
+      }
+
+      100% {
+        background-position: 200% center;
+      }
+    }
+
+    @keyframes glowPrimary {
+      0% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+      }
+
+      100% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+      }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--gray-700);
+      border-radius: 10px;
+      border: 2px solid var(--dark);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gray-500);
+    }
+
+    /* Background Effects */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.06) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Header */
+    header {
+      background: rgba(15, 15, 16, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 16px 32px;
+      position: relative;
+      z-index: 10;
+      flex-shrink: 0;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--gray-400);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      border-radius: var(--radius-md);
+      color: var(--gray-300);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      background: var(--gray-700);
+      color: var(--white);
+      transform: translateX(-2px);
+    }
+
+    .back-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .logo-icon svg {
+      width: 24px;
+      height: 24px;
+      color: white;
+    }
+
+    .logo-text h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--white);
+    }
+
+    .logo-text p {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+
+    .header-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--primary-light);
+      font-weight: 600;
+    }
+
+    .header-badge svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Main */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      position: relative;
+      z-index: 10;
+      overflow: hidden;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Meta Bar */
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      animation: slideUp 0.5s ease-out 0.1s both;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(26, 26, 29, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: var(--gray-300);
+    }
+
+    .meta-item svg {
+      width: 18px;
+      height: 18px;
+      color: var(--primary);
+    }
+
+    .meta-item strong {
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .meta-item.changes {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .meta-item.changes strong {
+      color: var(--primary-light);
+    }
+
+    /* Action Bar */
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      animation: slideUp 0.5s ease-out 0.15s both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: white;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-primary:disabled {
+      background: var(--gray-600);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      color: var(--gray-300);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-700);
+      color: var(--white);
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--primary-light);
+    }
+
+    .btn-success:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    /* SQL Editor Container */
+    .editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(26, 26, 29, 0.75);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow:
+        0 40px 80px -12px rgba(0, 0, 0, 0.6),
+        0 18px 36px -18px rgba(0, 0, 0, 0.5),
+        0 0 40px rgba(16, 185, 129, 0.1);
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: rgba(15, 15, 16, 0.6);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .editor-window-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .window-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .dot-red {
+      background: #ff5f56;
+    }
+
+    .dot-yellow {
+      background: #ffbd2e;
+    }
+
+    .dot-green {
+      background: #27c93f;
+    }
+
+    .editor-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-400);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .editor-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--primary);
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .editor-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--gray-800);
+      border: 1px solid var(--gray-700);
+      border-radius: var(--radius-sm);
+      color: var(--gray-400);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .editor-btn:hover {
+      background: var(--gray-700);
+      color: var(--white);
+    }
+
+    .editor-btn.copied {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--primary-light);
+    }
+
+    .editor-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Code Area */
+    .code-wrapper {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .line-numbers {
+      padding: 20px 0;
+      background: rgba(15, 15, 16, 0.4);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      user-select: none;
+      min-width: 50px;
+      text-align: right;
+      overflow-y: auto;
+    }
+
+    .line-numbers span {
+      display: block;
+      padding: 0 12px;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--gray-600);
+    }
+
+    .code-area {
+      flex: 1;
+      padding: 20px;
+      overflow: auto;
+      background: transparent;
+    }
+
+    .code-area pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--gray-200);
+      white-space: pre;
+    }
+
+    /* SQL Syntax Highlighting */
+    .sql-keyword {
+      color: var(--sql-keyword);
+      font-weight: 600;
+    }
+
+    .sql-function {
+      color: var(--sql-function);
+    }
+
+    .sql-string {
+      color: var(--sql-string);
+    }
+
+    .sql-number {
+      color: var(--sql-number);
+    }
+
+    .sql-comment {
+      color: var(--sql-comment);
+      font-style: italic;
+    }
+
+    .sql-table {
+      color: var(--sql-table);
+    }
+
+    .sql-operator {
+      color: var(--gray-400);
+    }
+
+    /* Loading State */
+    .loading-state {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 60px;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--gray-700);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--gray-300);
+    }
+
+    .loading-subtext {
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+
+    /* Error State */
+    .error-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 60px;
+    }
+
+    .error-state.visible {
+      display: flex;
+    }
+
+    .error-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(239, 68, 68, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .error-icon svg {
+      width: 32px;
+      height: 32px;
+      color: var(--danger);
+    }
+
+    .error-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .error-message {
+      font-size: 14px;
+      color: var(--gray-400);
+      text-align: center;
+      max-width: 400px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: rgba(26, 26, 29, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xl);
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .toast.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .toast.success .toast-icon {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary);
+    }
+
+    .toast-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toast-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .toast-content {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .toast-message {
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+
+    /* Version Badge */
+    .version-badge {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 8px 14px;
+      background: rgba(26, 26, 29, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-400);
+      z-index: 5;
+      backdrop-filter: blur(10px);
+    }
+
+    .version-badge span {
+      color: var(--primary-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header {
+        padding: 12px 16px;
+      }
+
+      .header-content {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .header-left {
+        width: 100%;
+        justify-content: center;
+      }
+
+      main {
+        padding: 16px;
+      }
+
+      .meta-bar {
+        flex-direction: column;
+      }
+
+      .meta-item {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .action-bar {
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+      }
+
+      .editor-header {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .editor-actions {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .line-numbers {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-content">
+      <div class="header-left">
+        <a href="/" class="back-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back
+        </a>
+        <div class="logo-section">
+          <div class="logo-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+              </path>
+            </svg>
+          </div>
+          <div class="logo-text">
+            <h1>SQL Preview</h1>
+            <p>AI-Generated Migration Script</p>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          AI-Powered
+        </div>
+        <button class="logout-btn" id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main>
+    <!-- Meta Bar -->
+    <div class="meta-bar">
+      <div class="meta-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7" />
+        </svg>
+        <span>Database: <strong id="dbTypeBadge">Loading...</strong></span>
+      </div>
+      <div class="meta-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        <span>Direction: <strong id="directionBadge">Loading...</strong></span>
+      </div>
+      <div class="meta-item changes">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <span>Changes: <strong id="changesCount">0</strong></span>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="btn btn-primary" id="generateBtn" onclick="confirmAndGenerateSQL()">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Generate SQL
+      </button>
+      <button class="btn btn-secondary" id="copyBtn" onclick="copySQL()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+        Copy to Clipboard
+      </button>
+      <button class="btn btn-secondary" id="downloadBtn" onclick="downloadSQL()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download SQL
+      </button>
+    </div>
+
+    <!-- SQL Editor -->
+    <div class="editor-container">
+      <div class="editor-header">
+        <div class="editor-window-controls">
+          <div class="window-dot dot-red"></div>
+          <div class="window-dot dot-yellow"></div>
+          <div class="window-dot dot-green"></div>
+        </div>
+        <div class="editor-title">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          migration_script.sql
+        </div>
+        <div class="editor-actions">
+          <button class="editor-btn" id="editorCopyBtn" onclick="copySQL()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Generating SQL Script...</div>
+        <div class="loading-subtext">AI is analyzing schema differences</div>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-state" id="errorState">
+        <div class="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="error-title">Generation Failed</div>
+        <div class="error-message" id="errorMessage">An error occurred while generating SQL.</div>
+        <div style="display: flex; gap: 12px; margin-top: 8px;">
+          <a href="/" class="btn btn-secondary" style="text-decoration: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            Go to Home
+          </a>
+          <button class="btn btn-primary" onclick="generateSQL()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Try Again
+          </button>
+        </div>
+      </div>
+
+      <!-- Code Display -->
+      <div class="code-wrapper" id="codeWrapper" style="display: none;">
+        <div class="line-numbers" id="lineNumbers"></div>
+        <div class="code-area">
+          <pre id="sqlCode"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast success" id="toast">
+    <div class="toast-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <div class="toast-content">
+      <div class="toast-title" id="toastTitle">Copied!</div>
+      <div class="toast-message" id="toastMessage">SQL copied to clipboard</div>
+    </div>
+  </div>
+
+  <!-- Version Badge -->
+  <div class="version-badge">
+    Schema Drift Detector <span>v2.0</span>
+  </div>
+
+
+  <script>
+    let currentSQL = '';
+    let dbType = '';
+    let direction = '';
+    let schemaChanges = [];
+
+    const thinkingMessages = [
+      "Analyzing schema differences...",
+      "Consulting AI DBA...",
+      "Drafting migration script...",
+      "Optimizing SQL commands...",
+      "Finalizing documentation..."
+    ];
+
+    function highlightSQL(sql) {
+      return sql
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/(--.*$)/gm, '<span class="sql-comment">$1</span>')
+        .replace(/\b(ALTER|TABLE|ADD|COLUMN|EXEC|GO|VARCHAR|INT|DATE|BIT|DECIMAL)\b/gi,
+          '<span class="sql-keyword">$1</span>');
+    }
+
+    function updateLineNumbers(sql) {
+      const lines = sql.split('\n');
+      document.getElementById('lineNumbers').innerHTML =
+        lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+    }
+
+    /* =====================================================
+       🔥 THIS IS THE ONLY FUNCTION THE BUTTON CALLS
+       ===================================================== */
+    // 1. Load Metadata (Badges) immediately on page load
+    async function loadMetadata() {
+      try {
+        const res = await fetch("/sql-preview", {
+          headers: {
+            "Authorization": "Bearer " + localStorage.getItem('access_token')
+          }
+        });
+        if (!res.ok) {
+          if (res.status === 401) window.location.href = '/login';
+          throw new Error("Failed to load SQL preview");
+        }
+        const data = await res.json();
+
+        dbType = data.database;
+        direction = data.direction;
+        schemaChanges = data.changes || [];
+
+        document.getElementById('dbTypeBadge').textContent = dbType;
+        document.getElementById('directionBadge').textContent = direction;
+        document.getElementById('changesCount').textContent = data.changes_count;
+
+        console.log("🔥 Metadata loaded. Changes count:", data.changes_count);
+      } catch (err) {
+        console.error("Failed to load metadata:", err);
+      }
+    }
+
+    async function confirmAndGenerateSQL() {
+      const loadingState = document.getElementById('loadingState');
+      const errorState = document.getElementById('errorState');
+      const codeWrapper = document.getElementById('codeWrapper');
+      const generateBtn = document.getElementById('generateBtn');
+
+      loadingState.style.display = 'flex';
+      errorState.classList.remove('visible');
+      codeWrapper.style.display = 'none';
+      generateBtn.disabled = true;
+
+      let msgIndex = 0;
+      const loadingText = loadingState.querySelector('.loading-text');
+      const msgInterval = setInterval(() => {
+        msgIndex = (msgIndex + 1) % thinkingMessages.length;
+        loadingText.textContent = thinkingMessages[msgIndex];
+      }, 2000);
+
+      try {
+        if (!schemaChanges || schemaChanges.length === 0) {
+          currentSQL = "-- No changes detected.";
+          document.getElementById('sqlCode').innerHTML = highlightSQL(currentSQL);
+          loadingState.style.display = 'none';
+          codeWrapper.style.display = 'flex';
+          return;
+        }
+        // Prepare prompt for human-like SQL
+        const prompt = `You are an expert Database Administrator. Generate a concise SQL migration script for ${dbType}.
+Sync Direction: ${direction}
+
+Detected Changes:
+${JSON.stringify(schemaChanges, null, 2)}
+
+Requirements:
+- Output ONLY the raw SQL commands.
+- Use a "human-like" style: simple, direct commands.
+- Before each command, add a short, natural comment like "-- altering the column name like this" or "-- adding missing column".
+- Do NOT use verbose boilerplate: no "IF EXISTS" checks, no "BEGIN TRANSACTION", no "PRINT" statements, no "GO" (unless strictly required), no "DECLARE" variables.
+- One command per change.
+- Format for ${dbType} syntax.`;
+
+        // 3. Call Backend AI Endpoint (Secure)
+        const aiResponse = await fetch("/generate-ai-sql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + localStorage.getItem('access_token')
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        if (!aiResponse.ok) throw new Error('AI Generation failed');
+        const aiData = await aiResponse.json();
+
+        // Clean up the response if it contains markdown code blocks
+        currentSQL = aiData.choices[0].message.content.replace(/```sql|```/g, '').trim();
+
+        document.getElementById('sqlCode').innerHTML = highlightSQL(currentSQL);
+        updateLineNumbers(currentSQL);
+
+        loadingState.style.display = 'none';
+        codeWrapper.style.display = 'flex';
+        showToast('AI SQL Generated', 'Migration script created by AI');
+        clearInterval(msgInterval);
+
+      } catch (err) {
+        clearInterval(msgInterval);
+        console.error(err);
+        loadingState.style.display = 'none';
+        errorState.classList.add('visible');
+        document.getElementById('errorMessage').textContent = err.message;
+      } finally {
+        generateBtn.disabled = false;
+      }
+    }
+
+    function copySQL() {
+      if (!currentSQL) return;
+      navigator.clipboard.writeText(currentSQL);
+      showToast('Copied', 'SQL copied to clipboard');
+    }
+
+    function downloadSQL() {
+      if (!currentSQL) return;
+      const blob = new Blob([currentSQL], { type: 'text/sql' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'migration.sql';
+      a.click();
+    }
+
+    function showToast(title, msg) {
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastMessage').textContent = msg;
+      document.getElementById('toast').classList.add('visible');
+      setTimeout(() => document.getElementById('toast').classList.remove('visible'), 3000);
+    }
+    window.onload = loadMetadata;
+
+    // Logout handler
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+      });
+    }
+  </script>
+
+
+
+</body>
+
+</html>

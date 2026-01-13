@@ -1,0 +1,25 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+build/
+.venv/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Comparison data
+FINAL_SCHEMA_COMPARISON.xlsx
+
+# Database
+users.db
+
+# Demo files
+demo_*.csv
