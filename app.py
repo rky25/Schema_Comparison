@@ -198,16 +198,20 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Email already registered")
         
         hashed_password = get_password_hash(user.password)
-        new_user = User(username=user.username, email=user.email, hashed_password=hashed_password, is_verified=False)
+        # Auto-verify users so they can login immediately
+        new_user = User(username=user.username, email=user.email, hashed_password=hashed_password, is_verified=True)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         
-        # Send verification email
-        verification_token = create_verification_token_record(db, new_user.id)
-        send_verification_email(user.email, verification_token, user.username)
+        # Try to send verification email in background (non-blocking, optional)
+        try:
+            verification_token = create_verification_token_record(db, new_user.id)
+            send_verification_email(user.email, verification_token, user.username)
+        except Exception as email_err:
+            print(f"Warning: Could not send verification email: {email_err}")
         
-        return {"status": "ok", "message": "Registration successful! Please check your email to verify your account.", "requires_verification": True}
+        return {"status": "ok", "message": "Registration successful! You can now login.", "requires_verification": False}
     except Exception as e:
         import traceback
         error_msg = traceback.format_exc()
