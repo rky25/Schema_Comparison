@@ -316,7 +316,7 @@
     <div class="orb orb-2"></div>
 
     <div class="back-to-home">
-        <a href="/landing">
+        <a href="/">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -548,7 +548,7 @@
                     if (isLogin) {
                         localStorage.setItem('access_token', data.access_token);
                         showMessage("Login successful! Redirecting...", "success");
-                        setTimeout(() => window.location.href = '/', 1000);
+                        setTimeout(() => window.location.href = '/app', 1000);
                     } else {
                         pendingVerificationEmail = emailInput.value;
                         showMessage("Account created! Check your email for verification.", "success");

@@ -300,14 +300,19 @@ def resend_verification(request: ResendVerificationRequest, db: Session = Depend
 # =================================================
 # ROUTES
 # =================================================
-@app.get("/landing", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def landing_page(request: Request):
-    """Public landing page for marketing and first impressions."""
+    """Public landing page - first thing visitors see."""
     return templates.TemplateResponse("landing.html", {"request": request})
 
-@app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    # Frontend handles the redirect if no token is found in localStorage
+@app.get("/landing", response_class=HTMLResponse)
+def landing_redirect(request: Request):
+    """Redirect /landing to root for backwards compatibility."""
+    return templates.TemplateResponse("landing.html", {"request": request})
+
+@app.get("/app", response_class=HTMLResponse)
+def app_dashboard(request: Request):
+    """Main app dashboard - requires authentication (handled by frontend)."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/compare")
