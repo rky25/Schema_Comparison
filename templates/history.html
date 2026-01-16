@@ -31,6 +31,60 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             min-height: 100vh;
             line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.4;
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: #10b981;
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+            background: #6366f1;
+            bottom: -80px;
+            right: -80px;
+            animation-delay: -7s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -30px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.95);
+            }
         }
 
         header {
@@ -272,6 +326,9 @@
 </head>
 
 <body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
     <header>
         <div class="logo-section">
             <div class="logo-icon">
@@ -411,7 +468,7 @@
 
         document.getElementById('logout-btn').addEventListener('click', () => {
             localStorage.removeItem('access_token');
-            window.location.href = '/login';
+            window.location.href = '/landing';
         });
 
         loadHistory();

@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Drift Detector - AI-Powered Database Schema Comparison</title>
+    <meta name="description"
+        content="Compare database schemas with precision and generate AI-powered migration scripts. Detect schema drift instantly.">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2.5'%3E%3Cpath d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'/%3E%3C/svg%3E">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-glow: rgba(16, 185, 129, 0.3);
+            --secondary: #6366f1;
+            --secondary-glow: rgba(99, 102, 241, 0.3);
+            --accent: #a855f7;
+            --bg: #030712;
+            --bg-card: rgba(17, 24, 39, 0.6);
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -2;
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.5;
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--primary);
+            top: -200px;
+            left: -200px;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--secondary);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -7s;
+        }
+
+        .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -14s;
+            opacity: 0.3;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -30px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.95);
+            }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            background: rgba(3, 7, 18, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+
+        .logo-icon svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px var(--primary-glow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .hero-visual {
+            margin-top: 4rem;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .code-window {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.5);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .code-dot.red {
+            background: #f87171;
+        }
+
+        .code-dot.yellow {
+            background: #fbbf24;
+        }
+
+        .code-dot.green {
+            background: #34d399;
+        }
+
+        .code-body {
+            padding: 1.5rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        .code-line {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .line-num {
+            color: var(--text-muted);
+            width: 2rem;
+            opacity: 0.5;
+        }
+
+        .keyword {
+            color: #c084fc;
+        }
+
+        .string {
+            color: #34d399;
+        }
+
+        .comment {
+            color: #6b7280;
+        }
+
+        .function {
+            color: #60a5fa;
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes typing {
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 100%;
+            }
+        }
+
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(16, 185, 129, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px -20px var(--primary-glow);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary-glow), rgba(99, 102, 241, 0.2));
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .feature-icon svg {
+            width: 28px;
+            height: 28px;
+            color: var(--primary);
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 6rem 2rem;
+            background: rgba(99, 102, 241, 0.02);
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 3rem;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            border-radius: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 15px 30px var(--secondary-glow);
+        }
+
+        .step-content {
+            flex: 1;
+            padding-top: 1rem;
+        }
+
+        .step-content h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .step-content p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 6rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .cta-box {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 4rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: conic-gradient(from 0deg, transparent, var(--primary), transparent, var(--secondary), transparent);
+            animation: rotate 10s linear infinite;
+            opacity: 0.1;
+        }
+
+        @keyframes rotate {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Footer */
+        footer {
+            padding: 4rem 2rem 2rem;
+            border-top: 1px solid var(--border);
+            background: rgba(3, 7, 18, 0.8);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-top {
+            display: grid;
+            grid-template-columns: 2fr repeat(3, 1fr);
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .footer-column h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-column a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .footer-column a:hover {
+            color: var(--text);
+        }
+
+        .footer-bottom {
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .footer-top {
+                grid-template-columns: 1fr;
+            }
+
+            .step,
+            .step:nth-child(even) {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .step-number {
+                margin: 0 auto 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .cta-box {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/landing" class="logo">
+            <div class="logo-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <span class="logo-text">Schema Drift</span>
+        </a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a href="/login" class="btn btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="badge">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                AI-Powered Schema Analysis
+            </div>
+            <h1>Detect <span class="gradient">Schema Drift</span> Instantly</h1>
+            <p>Compare database schemas with precision and generate AI-powered migration scripts. Never miss a critical
+                change again.</p>
+            <div class="hero-buttons">
+                <a href="/login" class="btn btn-primary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    Get Started Free
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    See How It Works
+                </a>
+            </div>
+            <div class="hero-visual">
+                <div class="code-window">
+                    <div class="code-header">
+                        <span class="code-dot red"></span>
+                        <span class="code-dot yellow"></span>
+                        <span class="code-dot green"></span>
+                    </div>
+                    <div class="code-body">
+                        <div class="code-line"><span class="line-num">1</span><span class="comment">-- Schema drift
+                                detected ⚡</span></div>
+                        <div class="code-line"><span class="line-num">2</span><span class="keyword">ALTER TABLE</span>
+                            users <span class="keyword">ADD</span></div>
+                        <div class="code-line"><span class="line-num">3</span> email_verified <span
+                                class="function">BOOLEAN</span> <span class="keyword">DEFAULT</span> <span
+                                class="string">false</span>;</div>
+                        <div class="code-line"><span class="line-num">4</span></div>
+                        <div class="code-line"><span class="line-num">5</span><span class="keyword">ALTER TABLE</span>
+                            products <span class="keyword">ALTER COLUMN</span></div>
+                        <div class="code-line"><span class="line-num">6</span> price <span
+                                class="function">DECIMAL</span>(<span class="string">12,2</span>);</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Features</span>
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-desc">Powerful tools to keep your database schemas in sync across all environments.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </div>
+                <h3>Deep Schema Comparison</h3>
+                <p>Upload source and target schemas in CSV or Excel. Our engine analyzes tables, columns, data types,
+                    and constraints with 99.9% accuracy.</p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3>AI-Powered SQL Generation</h3>
+                <p>Get intelligent migration scripts tailored to your database. Supports MS SQL, PostgreSQL, MySQL,
+                    Oracle, and more.</p>
+            </div>
+            <div class="feature-card animate-on-scroll">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3>Secure & Private</h3>
+                <p>Your schema data never leaves your browser during comparison. Enterprise-grade security with
+                    encrypted authentication.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Process</span>
+            <h2 class="section-title">How It Works</h2>
+            <p class="section-desc">Three simple steps to detect and fix schema drift.</p>
+        </div>
+        <div class="steps-container">
+            <div class="step animate-on-scroll">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Upload Your Schemas</h3>
+                    <p>Upload your source (golden copy) and target database schemas as CSV or Excel files. Our system
+                        supports all major database formats.</p>
+                </div>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Analyze Differences</h3>
+                    <p>Our intelligent engine compares every table, column, data type, and constraint. Get a detailed
+                        report highlighting all discrepancies.</p>
+                </div>
+            </div>
+            <div class="step animate-on-scroll">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Generate Migration Scripts</h3>
+                    <p>With one click, generate production-ready SQL scripts to sync your schemas. AI-powered
+                        suggestions ensure safe migrations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-card animate-on-scroll">
+                <div class="stat-value">99.9%</div>
+                <div class="stat-label">Detection Accuracy</div>
+            </div>
+            <div class="stat-card animate-on-scroll">
+                <div class="stat-value">5min</div>
+                <div class="stat-label">Average Setup Time</div>
+            </div>
+            <div class="stat-card animate-on-scroll">
+                <div class="stat-value">10K+</div>
+                <div class="stat-label">Comparisons Made</div>
+            </div>
+            <div class="stat-card animate-on-scroll">
+                <div class="stat-value">24/7</div>
+                <div class="stat-label">Availability</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta-box animate-on-scroll">
+            <div class="cta-content">
+                <h2>Ready to Eliminate Schema Drift?</h2>
+                <p>Join thousands of developers who trust Schema Drift Detector for their database migrations.</p>
+                <a href="/login" class="btn btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                    Start Free Today
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="/landing" class="logo">
+                        <div class="logo-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <span class="logo-text">Schema Drift</span>
+                    </a>
+                    <p>AI-powered database schema comparison and migration tool. Detect drift, generate scripts, stay in
+                        sync.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="/login">Get Started</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Support</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Security</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2026 Schema Drift Detector. All rights reserved.</span>
+                <span>Made with ❤️ for developers</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Scroll animations - replay when scrolling back
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    // Remove visible class when element leaves viewport to replay animation
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.padding = '0.75rem 2rem';
+                nav.style.background = 'rgba(3, 7, 18, 0.95)';
+            } else {
+                nav.style.padding = '1rem 2rem';
+                nav.style.background = 'rgba(3, 7, 18, 0.8)';
+            }
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

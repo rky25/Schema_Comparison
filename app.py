@@ -300,6 +300,11 @@ def resend_verification(request: ResendVerificationRequest, db: Session = Depend
 # =================================================
 # ROUTES
 # =================================================
+@app.get("/landing", response_class=HTMLResponse)
+def landing_page(request: Request):
+    """Public landing page for marketing and first impressions."""
+    return templates.TemplateResponse("landing.html", {"request": request})
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     # Frontend handles the redirect if no token is found in localStorage
