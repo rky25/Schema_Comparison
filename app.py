@@ -204,12 +204,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_user)
         
-        # Try to send verification email in background (non-blocking, optional)
-        try:
-            verification_token = create_verification_token_record(db, new_user.id)
-            send_verification_email(user.email, verification_token, user.username)
-        except Exception as email_err:
-            print(f"Warning: Could not send verification email: {email_err}")
+        # Email sending disabled - users are auto-verified
+        # To enable emails, use a cloud email service like Resend or SendGrid
         
         return {"status": "ok", "message": "Registration successful! You can now login.", "requires_verification": False}
     except Exception as e:
