@@ -198,16 +198,23 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Email already registered")
         
         hashed_password = get_password_hash(user.password)
-        # Auto-verify users so they can login immediately
-        new_user = User(username=user.username, email=user.email, hashed_password=hashed_password, is_verified=True)
+        # Users must verify email before login
+        new_user = User(username=user.username, email=user.email, hashed_password=hashed_password, is_verified=False)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         
-        # Email sending disabled - users are auto-verified
-        # To enable emails, use a cloud email service like Resend or SendGrid
+        # Send verification email via Resend
+        verification_token = create_verification_token_record(db, new_user.id)
+        email_sent = send_verification_email(user.email, verification_token, user.username)
         
-        return {"status": "ok", "message": "Registration successful! You can now login.", "requires_verification": False}
+        if email_sent:
+            return {"status": "ok", "message": "Registration successful! Please check your email to verify your account.", "requires_verification": True}
+        else:
+            # If email fails, auto-verify so user can still login
+            new_user.is_verified = True
+            db.commit()
+            return {"status": "ok", "message": "Registration successful! You can now login.", "requires_verification": False}
     except Exception as e:
         import traceback
         error_msg = traceback.format_exc()
